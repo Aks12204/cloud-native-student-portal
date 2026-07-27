@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Student Management Portal</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar-brand { font-weight: 700; letter-spacing: 0.5px; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .stat-card { background: linear-gradient(135deg, #0d6efd, #0dcaf0); color: white; }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="bi bi-cloud-check-fill text-info me-2"></i>Cloud Student Portal</a>
+            <span class="badge bg-primary">AWS Serverless Powered</span>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        
+        <!-- Header Stats -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card p-3 stat-card">
+                    <h5>Total Enrolled</h5>
+                    <h2 id="totalCount" class="fw-bold mb-0">0</h2>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card p-3 h-100 d-flex justify-content-center">
+                    <span class="text-muted"><i class="bi bi-info-circle me-1"></i> Connected Backend: <strong>AWS API Gateway + Lambda + DynamoDB</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Registration Form -->
+            <div class="col-lg-4">
+                <div class="card p-4">
+                    <h5 class="card-title fw-bold mb-3"><i class="bi bi-person-plus-fill me-2 text-primary"></i>Add Student</h5>
+                    <form id="addStudentForm">
+                        <div class="mb-3">
+                            <label class="form-label">Student ID</label>
+                            <input type="text" id="student_id" class="form-control" placeholder="e.g. 101" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" id="name" class="form-control" placeholder="e.g. John Doe" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="email" class="form-control" placeholder="e.g. john@example.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Course</label>
+                            <input type="text" id="course" class="form-control" placeholder="e.g. Computer Science" required>
+                        </div>
+                        <button type="button" onclick="addStudent()" class="btn btn-primary w-100 fw-bold">Submit Record</button>
+                    </form>
+                    <div id="statusMessage" class="mt-3"></div>
+                </div>
+            </div>
+
+            <!-- Student Records Directory -->
+            <div class="col-lg-8">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title fw-bold mb-0"><i class="bi bi-people-fill me-2 text-success"></i>Student Directory</h5>
+                        <button onclick="fetchStudents()" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="mb-3">
+                        <input type="text" id="searchInput" onkeyup="filterStudents()" class="form-control" placeholder="Search by name or ID...">
+                    </div>
+
+                    <!-- Table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Course</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentTableBody">
+                                <tr><td colspan="5" class="text-center text-muted">Loading records from AWS...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://h8syx3y4rd.execute-api.ap-south-1.amazonaws.com/student"; // API Gateway Invoke URL
+
+        let allStudents = [];
+
+        // Fetch students on page load
+        window.onload = fetchStudents;
+
+        async function fetchStudents() {
+            try {
+                const res = await fetch(API_URL, { method: 'GET' });
+                allStudents = await res.json();
+                renderTable(allStudents);
+            } catch (err) {
+                console.error("Error fetching students:", err);
+                document.getElementById('studentTableBody').innerHTML = `<tr><td colspan="5" class="text-center text-danger">Failed to load data from AWS backend.</td></tr>`;
+            }
+        }
+
+        function renderTable(data) {
+            const tableBody = document.getElementById('studentTableBody');
+            document.getElementById('totalCount').innerText = data.length;
+
+            if (data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No student records found.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = data.map(s => `
+                <tr>
+                    <td><strong>${s.student_id}</strong></td>
+                    <td>${s.name}</td>
+                    <td>${s.email || 'N/A'}</td>
+                    <td><span class="badge bg-info text-dark">${s.course}</span></td>
+                    <td>
+                        <button onclick="deleteStudent('${s.student_id}')" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function addStudent() {
+            const student_id = document.getElementById('student_id').value;
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const course = document.getElementById('course').value;
+            const status = document.getElementById('statusMessage');
+
+            if(!student_id || !name || !course) {
+                status.innerHTML = `<div class="alert alert-warning p-2">Please fill required fields.</div>`;
+                return;
+            }
+
+            status.innerHTML = `<div class="alert alert-info p-2">Submitting to AWS...</div>`;
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_id, name, email, course })
+                });
+
+                if(res.ok) {
+                    status.innerHTML = `<div class="alert alert-success p-2">Record Added!</div>`;
+                    document.getElementById('addStudentForm').reset();
+                    fetchStudents();
+                } else {
+                    status.innerHTML = `<div class="alert alert-danger p-2">Error saving record.</div>`;
+                }
+            } catch(err) {
+                status.innerHTML = `<div class="alert alert-danger p-2">Network Error.</div>`;
+            }
+        }
+
+        async function deleteStudent(student_id) {
+            if(!confirm(`Are you sure you want to delete Student ID: ${student_id}?`)) return;
+
+            try {
+                await fetch(API_URL, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_id })
+                });
+                fetchStudents();
+            } catch(err) {
+                alert("Failed to delete record.");
+            }
+        }
+
+        function filterStudents() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allStudents.filter(s => 
+                s.name.toLowerCase().includes(query) || 
+                s.student_id.toLowerCase().includes(query) ||
+                s.course.toLowerCase().includes(query)
+            );
+            renderTable(filtered);
+        }
+    </script>
+</body>
+</html>

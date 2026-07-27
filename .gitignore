@@ -1,0 +1,9 @@
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore environment & secret files
+*.env
+*.pem
+*.ppk
+aws_credentials/
