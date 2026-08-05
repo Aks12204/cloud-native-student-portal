@@ -1,76 +1,156 @@
 import json
+import logging
 import boto3
+from botocore.exceptions import ClientError
 
+# Configure logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Initialize DynamoDB resource
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('StudentData')
+TABLE_NAME = 'StudentData'
+table = dynamodb.Table(TABLE_NAME)
+
+# Standard CORS headers
+CORS_HEADERS = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
+    'Access-Control-Allow-Methods': 'OPTIONS,GET,POST,DELETE'
+}
 
 def lambda_handler(event, context):
-    headers = {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
-        'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,DELETE'
-    }
+    """
+    AWS Lambda Handler for Student Portal CRUD Operations.
+    Supported HTTP Methods: GET, POST, DELETE, OPTIONS
+    """
+    logger.info("Received event: %s", json.dumps(event))
     
-    try:
-        # Resolve HTTP Method across REST API & HTTP API event structures
-        http_method = event.get('httpMethod')
-        if not http_method and 'requestContext' in event:
-            http_method = event['requestContext'].get('http', {}).get('method')
-            
-        # Handle Preflight OPTIONS Request
-        if http_method == 'OPTIONS':
-            return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'message': 'CORS OK'})}
+    # Extract HTTP method across REST API (v1) and HTTP API (v2) payloads
+    http_method = event.get('httpMethod')
+    if not http_method and 'requestContext' in event:
+        http_method = event['requestContext'].get('http', {}).get('method') or event['requestContext'].get('httpMethod')
+    
+    if not http_method:
+        http_method = 'GET'
+        
+    http_method = http_method.upper()
 
-        # 1. GET ALL STUDENTS
-        elif http_method == 'GET':
+    # Preflight OPTIONS request
+    if http_method == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': CORS_HEADERS,
+            'body': json.dumps({'message': 'CORS preflight check successful'})
+        }
+
+    try:
+        # ---------------------------------------------------------------------
+        # 1. GET: Fetch all student records
+        # ---------------------------------------------------------------------
+        if http_method == 'GET':
             response = table.scan()
             items = response.get('Items', [])
             return {
                 'statusCode': 200,
-                'headers': headers,
+                'headers': CORS_HEADERS,
                 'body': json.dumps(items)
             }
-            
-        # 2. CREATE NEW STUDENT
+
+        # ---------------------------------------------------------------------
+        # 2. POST: Add or Update a student record
+        # ---------------------------------------------------------------------
         elif http_method == 'POST':
-            body = event.get('body', {})
-            if isinstance(body, str):
-                body = json.loads(body) if body else {}
-            
-            student_id = body.get('student_id')
-            name = body.get('name')
-            course = body.get('course')
-            email = body.get('email', 'N/A')
-            
+            raw_body = event.get('body', {})
+            body = {}
+            if isinstance(raw_body, str):
+                body = json.loads(raw_body) if raw_body.strip() else {}
+            elif isinstance(raw_body, dict):
+                body = raw_body
+
+            student_id = str(body.get('student_id', '')).strip()
+            name = str(body.get('name', '')).strip()
+            email = str(body.get('email', '')).strip()
+            course = str(body.get('course', '')).strip()
+
             if not student_id or not name:
-                return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'Missing student_id or name'})}
-            
-            table.put_item(
-                Item={
-                    'student_id': str(student_id),
-                    'name': str(name),
-                    'course': str(course),
-                    'email': str(email)
+                return {
+                    'statusCode': 400,
+                    'headers': CORS_HEADERS,
+                    'body': json.dumps({'error': 'Missing required fields: student_id and name are mandatory.'})
                 }
-            )
-            return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'message': 'Student added successfully!'})}
 
-        # 3. DELETE STUDENT
+            item = {
+                'student_id': student_id,
+                'name': name,
+                'email': email if email else 'N/A',
+                'course': course if course else 'General'
+            }
+
+            table.put_item(Item=item)
+            logger.info("Saved student record: %s", item)
+
+            return {
+                'statusCode': 200,
+                'headers': CORS_HEADERS,
+                'body': json.dumps({
+                    'message': 'Student record successfully saved.',
+                    'student': item
+                })
+            }
+
+        # ---------------------------------------------------------------------
+        # 3. DELETE: Delete student record by student_id
+        # ---------------------------------------------------------------------
         elif http_method == 'DELETE':
-            body = event.get('body', {})
-            if isinstance(body, str):
-                body = json.loads(body) if body else {}
-                
-            student_id = body.get('student_id')
-            
+            raw_body = event.get('body', {})
+            body = {}
+            if isinstance(raw_body, str):
+                body = json.loads(raw_body) if raw_body.strip() else {}
+            elif isinstance(raw_body, dict):
+                body = raw_body
+
+            # Check query string parameters as fallback
+            query_params = event.get('queryStringParameters') or {}
+            student_id = body.get('student_id') or query_params.get('student_id')
+            if student_id:
+                student_id = str(student_id).strip()
+
             if not student_id:
-                return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'Missing student_id'})}
-                
-            table.delete_item(Key={'student_id': str(student_id)})
-            return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'message': 'Student deleted successfully!'})}
+                return {
+                    'statusCode': 400,
+                    'headers': CORS_HEADERS,
+                    'body': json.dumps({'error': 'Missing required parameter: student_id.'})
+                }
 
-        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': f'Unsupported method: {http_method}'})}
+            table.delete_item(Key={'student_id': student_id})
+            logger.info("Deleted student_id: %s", student_id)
 
+            return {
+                'statusCode': 200,
+                'headers': CORS_HEADERS,
+                'body': json.dumps({'message': f'Student ID {student_id} successfully deleted.'})
+            }
+
+        else:
+            return {
+                'statusCode': 405,
+                'headers': CORS_HEADERS,
+                'body': json.dumps({'error': f'HTTP Method {http_method} Not Allowed.'})
+            }
+
+    except ClientError as ce:
+        logger.error("DynamoDB ClientError: %s", str(ce))
+        return {
+            'statusCode': 500,
+            'headers': CORS_HEADERS,
+            'body': json.dumps({'error': f'Database error: {ce.response["Error"]["Message"]}'})
+        }
     except Exception as e:
-        return {'statusCode': 500, 'headers': headers, 'body': json.dumps({'error': str(e)})}
+        logger.error("Unhandled Exception: %s", str(e))
+        return {
+            'statusCode': 500,
+            'headers': CORS_HEADERS,
+            'body': json.dumps({'error': f'Internal Server Error: {str(e)}'})
+        }

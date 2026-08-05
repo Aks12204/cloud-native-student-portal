@@ -1,125 +1,468 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Student Management Portal</title>
+    <title>Cloud-Native Student Portal | AWS Serverless & Scalable</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .navbar-brand { font-weight: 700; letter-spacing: 0.5px; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .stat-card { background: linear-gradient(135deg, #0d6efd, #0dcaf0); color: white; }
+        :root {
+            --primary-gradient: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4f46e5 100%);
+            --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+            --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+            --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hero-banner {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 2.5rem 0 3.5rem;
+            border-bottom-left-radius: 2rem;
+            border-bottom-right-radius: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 1.25rem;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition-smooth);
+        }
+
+        [data-bs-theme="dark"] .glass-card {
+            background: rgba(30, 41, 59, 0.85);
+            border-color: rgba(51, 65, 85, 0.8);
+        }
+
+        .stat-card {
+            border: none;
+            border-radius: 1rem;
+            transition: var(--transition-smooth);
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .btn-gradient {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            font-weight: 600;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-gradient:hover {
+            color: white;
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+        }
+
+        .table-custom {
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+
+        .table-custom tbody tr {
+            background: var(--bs-card-bg);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+            transition: var(--transition-smooth);
+            border-radius: 10px;
+        }
+
+        .table-custom tbody tr:hover {
+            transform: scale(1.005);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .table-custom td, .table-custom th {
+            padding: 1rem 1.25rem;
+            vertical-align: middle;
+        }
+
+        .table-custom td:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+        .table-custom td:last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
+
+        .badge-aws {
+            background: rgba(255, 153, 0, 0.15);
+            color: #d97706;
+            border: 1px solid rgba(255, 153, 0, 0.3);
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 30px;
+        }
+
+        .badge-lambda {
+            background: rgba(14, 165, 233, 0.15);
+            color: #0284c7;
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .theme-toggle-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            transition: var(--transition-smooth);
+        }
+
+        .theme-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .pulse-indicator {
+            width: 10px;
+            height: 10px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+            animation: pulse 1.6s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <!-- Header / Hero Section -->
+    <header class="hero-banner mb-4">
         <div class="container">
-            <a class="navbar-brand" href="#"><i class="bi bi-cloud-check-fill text-info me-2"></i>Cloud Student Portal</a>
-            <span class="badge bg-primary">AWS Serverless Powered</span>
-        </div>
-    </nav>
-
-    <div class="container my-4">
-        
-        <!-- Header Stats -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="card p-3 stat-card">
-                    <h5>Total Enrolled</h5>
-                    <h2 id="totalCount" class="fw-bold mb-0">0</h2>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge-aws"><i class="bi bi-cloud-fill me-1"></i> AWS Serverless Architecture</span>
+                    <span class="badge badge-lambda d-none d-md-inline-block"><i class="bi bi-cpu me-1"></i> Python 3.12</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Light/Dark Theme">
+                        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-light rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#configModal">
+                        <i class="bi bi-gear-fill me-1"></i> API Settings
+                    </button>
                 </div>
             </div>
-            <div class="col-md-8">
-                <div class="card p-3 h-100 d-flex justify-content-center">
-                    <span class="text-muted"><i class="bi bi-info-circle me-1"></i> Connected Backend: <strong>AWS API Gateway + Lambda + DynamoDB</strong></span>
+
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="fw-extrabold display-6 mb-2">Cloud-Native Student Management Portal</h1>
+                    <p class="lead mb-0 opacity-90 fs-6">
+                        Serverless REST API backend using Amazon API Gateway, AWS Lambda, DynamoDB, S3 Static Web Hosting & EC2 ASG across Multi-AZ VPC.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                    <div class="d-inline-flex align-items-center bg-white bg-opacity-10 backdrop-blur px-3 py-2 rounded-pill border border-white border-opacity-25">
+                        <span class="pulse-indicator me-2"></span>
+                        <span class="small fw-semibold">Backend Status: Online</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="container mb-5 flex-grow-1">
+        
+        <!-- Metrics Stats Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card glass-card p-3 stat-card">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small fw-semibold text-uppercase">Total Students Enrolled</span>
+                            <h3 id="totalCount" class="fw-bold mb-0 text-primary">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card glass-card p-3 stat-card">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-success bg-opacity-10 text-success">
+                            <i class="bi bi-database-check"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small fw-semibold text-uppercase">DynamoDB Table</span>
+                            <h6 class="fw-bold mb-0 text-success">StudentData (On-Demand)</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card glass-card p-3 stat-card">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-info bg-opacity-10 text-info">
+                            <i class="bi bi-globe-americas"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small fw-semibold text-uppercase">Deployment Region</span>
+                            <h6 class="fw-bold mb-0 text-info">ap-south-1 (Mumbai)</h6>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="row g-4">
-            <!-- Registration Form -->
+            <!-- Left Column: Add Student Form -->
             <div class="col-lg-4">
-                <div class="card p-4">
-                    <h5 class="card-title fw-bold mb-3"><i class="bi bi-person-plus-fill me-2 text-primary"></i>Add Student</h5>
-                    <form id="addStudentForm">
+                <div class="card glass-card p-4 h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="fw-bold mb-0"><i class="bi bi-person-plus-fill text-primary me-2"></i>Enroll Student</h5>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">New Record</span>
+                    </div>
+                    <form id="addStudentForm" onsubmit="event.preventDefault(); addStudent();">
                         <div class="mb-3">
-                            <label class="form-label">Student ID</label>
-                            <input type="text" id="student_id" class="form-control" placeholder="e.g. 101" required>
+                            <label for="student_id" class="form-label small fw-bold">Student ID <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-card-heading"></i></span>
+                                <input type="text" id="student_id" class="form-control" placeholder="e.g. 1230438004" required>
+                            </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Full Name</label>
-                            <input type="text" id="name" class="form-control" placeholder="e.g. John Doe" required>
+                            <label for="name" class="form-label small fw-bold">Full Name <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                                <input type="text" id="name" class="form-control" placeholder="e.g. Abhishek Singh" required>
+                            </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" id="email" class="form-control" placeholder="e.g. john@example.com" required>
+                            <label for="email" class="form-label small fw-bold">Email Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                                <input type="email" id="email" class="form-control" placeholder="e.g. abhishek@example.com">
+                            </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Course</label>
-                            <input type="text" id="course" class="form-control" placeholder="e.g. Computer Science" required>
+                            <label for="course" class="form-label small fw-bold">Course / Department</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-journal-bookmark-fill"></i></span>
+                                <input type="text" id="course" class="form-control" placeholder="e.g. B.Tech Computer Science">
+                            </div>
                         </div>
-                        <button type="button" onclick="addStudent()" class="btn btn-primary w-100 fw-bold">Submit Record</button>
+                        <button type="submit" id="submitBtn" class="btn btn-gradient w-100 py-2.5 mt-2">
+                            <i class="bi bi-cloud-upload-fill me-2"></i>Save Student Record
+                        </button>
                     </form>
                     <div id="statusMessage" class="mt-3"></div>
                 </div>
             </div>
 
-            <!-- Student Records Directory -->
+            <!-- Right Column: Student Directory Table -->
             <div class="col-lg-8">
-                <div class="card p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title fw-bold mb-0"><i class="bi bi-people-fill me-2 text-success"></i>Student Directory</h5>
-                        <button onclick="fetchStudents()" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+                <div class="card glass-card p-4 h-100">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-1"><i class="bi bi-people-fill text-success me-2"></i>Student Records Directory</h5>
+                            <p class="text-muted small mb-0">Live data synchronized with AWS DynamoDB key-value store</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button onclick="fetchStudents()" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- Search Input -->
-                    <div class="mb-3">
-                        <input type="text" id="searchInput" onkeyup="filterStudents()" class="form-control" placeholder="Search by name or ID...">
+                    <!-- Search & Filter Bar -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-12">
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+                                <input type="text" id="searchInput" onkeyup="filterStudents()" class="form-control border-start-0" placeholder="Search by Student ID, Name, Email, or Course...">
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Table -->
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
+                        <table class="table table-custom align-middle mb-0">
+                            <thead>
+                                <tr class="text-uppercase small text-muted">
                                     <th>ID</th>
-                                    <th>Name</th>
+                                    <th>Student Name</th>
                                     <th>Email</th>
                                     <th>Course</th>
-                                    <th>Action</th>
+                                    <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="studentTableBody">
-                                <tr><td colspan="5" class="text-center text-muted">Loading records from AWS...</td></tr>
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                        Connecting to AWS API Gateway...
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-3 bg-body-tertiary border-top">
+        <div class="container text-center text-md-between d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+            <span class="small text-muted">
+                <strong>Developer:</strong> Abhishek Singh (Roll No: 1230438004) | B.Tech CSE, Babu Banarsi Das University
+            </span>
+            <span class="small text-muted">
+                <strong>Guide:</strong> Rudra Prakash Yadav | GRAStech AWS Cloud Training
+            </span>
+        </div>
+    </footer>
+
+    <!-- Configuration Modal -->
+    <div class="modal fade" id="configModal" tabindex="-1" aria-labelledby="configModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-header-title mb-0" id="configModalLabel"><i class="bi bi-sliders me-2"></i>API Endpoint Configuration</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <label for="apiUrlInput" class="form-label fw-bold">AWS API Gateway Endpoint URL</label>
+                    <input type="url" id="apiUrlInput" class="form-control mb-2" placeholder="https://xyz.execute-api.ap-south-1.amazonaws.com/">
+                    <div class="form-text small mb-3">Target endpoint for GET, POST, and DELETE REST operations.</div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-light" onclick="resetDefaultApiUrl()">Reset Default</button>
+                        <button type="button" class="btn btn-primary" onclick="saveApiUrl()" data-bs-dismiss="modal">Save Endpoint</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script>
-        const API_URL = "https://h8syx3y4rd.execute-api.ap-south-1.amazonaws.com/student"; // API Gateway Invoke URL
+    <!-- Bootstrap 5 JavaScript Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+    <script>
+        // Default deployment API Gateway endpoint URL
+        const DEFAULT_API_URL = "https://h8syx3y4rd.execute-api.ap-south-1.amazonaws.com/";
+
+        let currentApiUrl = localStorage.getItem('STUDENT_PORTAL_API_URL') || DEFAULT_API_URL;
         let allStudents = [];
 
-        // Fetch students on page load
-        window.onload = fetchStudents;
+        // Initialize UI on load
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('apiUrlInput').value = currentApiUrl;
+            fetchStudents();
+        });
+
+        function saveApiUrl() {
+            const inputVal = document.getElementById('apiUrlInput').value.trim();
+            if (inputVal) {
+                currentApiUrl = inputVal;
+                localStorage.setItem('STUDENT_PORTAL_API_URL', currentApiUrl);
+                fetchStudents();
+            }
+        }
+
+        function resetDefaultApiUrl() {
+            currentApiUrl = DEFAULT_API_URL;
+            document.getElementById('apiUrlInput').value = DEFAULT_API_URL;
+            localStorage.removeItem('STUDENT_PORTAL_API_URL');
+            fetchStudents();
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-bs-theme', newTheme);
+            
+            const icon = document.getElementById('themeIcon');
+            icon.className = newTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+        }
 
         async function fetchStudents() {
+            const tableBody = document.getElementById('studentTableBody');
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                        Fetching live records from AWS DynamoDB...
+                    </td>
+                </tr>`;
+
             try {
-                const res = await fetch(API_URL, { method: 'GET' });
-                allStudents = await res.json();
+                const response = await fetch(currentApiUrl, { method: 'GET' });
+                if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+                
+                const data = await response.json();
+                allStudents = Array.isArray(data) ? data : [];
                 renderTable(allStudents);
             } catch (err) {
-                console.error("Error fetching students:", err);
-                document.getElementById('studentTableBody').innerHTML = `<tr><td colspan="5" class="text-center text-danger">Failed to load data from AWS backend.</td></tr>`;
+                console.error("API Fetch Error:", err);
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-danger">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            Failed to load records from backend API. Verify endpoint settings.
+                        </td>
+                    </tr>`;
+                document.getElementById('totalCount').innerText = "0";
             }
         }
 
@@ -128,19 +471,29 @@
             document.getElementById('totalCount').innerText = data.length;
 
             if (data.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No student records found.</td></tr>`;
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            <i class="bi bi-folder2-open display-6 d-block mb-2"></i>
+                            No student records found in DynamoDB. Add your first record!
+                        </td>
+                    </tr>`;
                 return;
             }
 
             tableBody.innerHTML = data.map(s => `
                 <tr>
-                    <td><strong>${s.student_id}</strong></td>
-                    <td>${s.name}</td>
-                    <td>${s.email || 'N/A'}</td>
-                    <td><span class="badge bg-info text-dark">${s.course}</span></td>
+                    <td><strong class="font-monospace text-primary">${escapeHtml(s.student_id)}</strong></td>
+                    <td class="fw-semibold">${escapeHtml(s.name)}</td>
+                    <td class="text-muted small">${escapeHtml(s.email || 'N/A')}</td>
                     <td>
-                        <button onclick="deleteStudent('${s.student_id}')" class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-trash"></i>
+                        <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-3 py-1">
+                            ${escapeHtml(s.course || 'General')}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <button onclick="deleteStudent('${escapeHtml(s.student_id)}')" class="btn btn-sm btn-outline-danger border-0 rounded-circle" title="Delete Student">
+                            <i class="bi bi-trash3-fill"></i>
                         </button>
                     </td>
                 </tr>
@@ -148,61 +501,85 @@
         }
 
         async function addStudent() {
-            const student_id = document.getElementById('student_id').value;
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const course = document.getElementById('course').value;
+            const student_id = document.getElementById('student_id').value.trim();
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const course = document.getElementById('course').value.trim();
             const status = document.getElementById('statusMessage');
+            const submitBtn = document.getElementById('submitBtn');
 
-            if(!student_id || !name || !course) {
-                status.innerHTML = `<div class="alert alert-warning p-2">Please fill required fields.</div>`;
+            if (!student_id || !name) {
+                status.innerHTML = `<div class="alert alert-warning p-2 small"><i class="bi bi-exclamation-circle me-1"></i>Please provide required Student ID and Name.</div>`;
                 return;
             }
 
-            status.innerHTML = `<div class="alert alert-info p-2">Submitting to AWS...</div>`;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span>Submitting...`;
+            status.innerHTML = `<div class="alert alert-info p-2 small"><i class="bi bi-cloud-upload me-1"></i>Sending request to AWS Lambda...</div>`;
 
             try {
-                const res = await fetch(API_URL, {
+                const response = await fetch(currentApiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ student_id, name, email, course })
                 });
 
-                if(res.ok) {
-                    status.innerHTML = `<div class="alert alert-success p-2">Record Added!</div>`;
+                if (response.ok) {
+                    status.innerHTML = `<div class="alert alert-success p-2 small"><i class="bi bi-check-circle me-1"></i>Record successfully saved to DynamoDB!</div>`;
                     document.getElementById('addStudentForm').reset();
+                    setTimeout(() => status.innerHTML = '', 3000);
                     fetchStudents();
                 } else {
-                    status.innerHTML = `<div class="alert alert-danger p-2">Error saving record.</div>`;
+                    const errData = await response.json().catch(() => ({}));
+                    status.innerHTML = `<div class="alert alert-danger p-2 small"><i class="bi bi-x-circle me-1"></i>${errData.error || 'Failed to save record.'}</div>`;
                 }
-            } catch(err) {
-                status.innerHTML = `<div class="alert alert-danger p-2">Network Error.</div>`;
+            } catch (err) {
+                status.innerHTML = `<div class="alert alert-danger p-2 small"><i class="bi bi-wifi-off me-1"></i>Network connection error.</div>`;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="bi bi-cloud-upload-fill me-2"></i>Save Student Record`;
             }
         }
 
         async function deleteStudent(student_id) {
-            if(!confirm(`Are you sure you want to delete Student ID: ${student_id}?`)) return;
+            if (!confirm(`Are you sure you want to delete Student ID: ${student_id}?`)) return;
 
             try {
-                await fetch(API_URL, {
+                const response = await fetch(currentApiUrl, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ student_id })
                 });
-                fetchStudents();
-            } catch(err) {
-                alert("Failed to delete record.");
+
+                if (response.ok) {
+                    fetchStudents();
+                } else {
+                    alert("Failed to delete student record from DynamoDB.");
+                }
+            } catch (err) {
+                alert("Network error while deleting record.");
             }
         }
 
         function filterStudents() {
             const query = document.getElementById('searchInput').value.toLowerCase();
             const filtered = allStudents.filter(s => 
-                s.name.toLowerCase().includes(query) || 
-                s.student_id.toLowerCase().includes(query) ||
-                s.course.toLowerCase().includes(query)
+                (s.name && s.name.toLowerCase().includes(query)) || 
+                (s.student_id && s.student_id.toLowerCase().includes(query)) ||
+                (s.course && s.course.toLowerCase().includes(query)) ||
+                (s.email && s.email.toLowerCase().includes(query))
             );
             renderTable(filtered);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
     </script>
 </body>

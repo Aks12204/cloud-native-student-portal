@@ -7,3 +7,15 @@ Thumbs.db
 *.pem
 *.ppk
 aws_credentials/
+
+# Ignore Terraform state & lock files
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform.lock.hcl
+*.zip
+
+# Ignore Python cache
+__pycache__/
+*.pyc
